@@ -5,12 +5,6 @@
 //+------------------------------------------------------------------+
 #property strict
 
-// Input parameters
-input double RiskAmount = 5;      // Risk amount per trade in dollars
-input double StopLoss = 50;       // Stop loss in pips
-input double TakeProfit = 100;    // Take profit in pips
-input double PipValue = 10;       // Pip value in dollars per lot
-
 double LotSize;
 double PotentialProfit;
 
@@ -19,7 +13,11 @@ double PotentialProfit;
 //+------------------------------------------------------------------+
 int OnInit()
   {
-   CalculateRisk();
+   // Create labels and edit fields for user input
+   CreateLabel("RiskAmountLabel", "Risk Amount ($):", 10, 10, clrWhite);
+   CreateEditField("RiskAmountValue", "5", 150, 10, clrWhite);
+   CreateLabel("StopLossLabel", "Stop Loss Price:", 10, 40, clrRed);
+   CreateEditField("StopLossValue", DoubleToString(Ask - 0.0010, Digits), 150, 40, clrWhite);
 
    return(INIT_SUCCEEDED);
   }
@@ -30,31 +28,78 @@ void OnDeinit(const int reason)
   {
    // Cleanup code if needed
    Comment(""); // Clear the comment on deinitialization
+
+   // Delete labels and edit fields
+   ObjectDelete("RiskAmountLabel");
+   ObjectDelete("RiskAmountValue");
+   ObjectDelete("StopLossLabel");
+   ObjectDelete("StopLossValue");
   }
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
 //+------------------------------------------------------------------+
 void OnTick()
   {
+   // Get the current Ask and Bid prices
+   double currentAsk = Ask;
+   double currentBid = Bid;
+
+   // Read values from edit fields
+   double RiskAmount = StrToDouble(ObjectGetString(0, "RiskAmountValue", OBJPROP_TEXT));
+   double StopLossPrice = StrToDouble(ObjectGetString(0, "StopLossValue", OBJPROP_TEXT));
+
+   // Recalculate risk based on updated values
+   CalculateRisk(RiskAmount, StopLossPrice, currentAsk);
+
    // Update the display on each tick
-   Comment("Risk Amount: $", RiskAmount, "\nStop Loss: ", StopLoss, " pips\nTake Profit: ", TakeProfit, " pips\nPip Value: $", PipValue, "\n\nCalculated Lot Size: ", LotSize, "\nPotential Profit: $", PotentialProfit);
+   Comment("Current Ask: ", currentAsk, "\nCurrent Bid: ", currentBid, "\nRisk Amount: $", RiskAmount, "\nStop Loss Price: ", StopLossPrice, "\n\nCalculated Lot Size: ", LotSize);
   }
 //+------------------------------------------------------------------+
 //| Function to calculate risk                                       |
 //+------------------------------------------------------------------+
-void CalculateRisk()
+void CalculateRisk(double RiskAmount, double StopLossPrice, double currentAsk)
   {
+   // Calculate the stop loss in pips
+   double StopLossPips = MathAbs(currentAsk - StopLossPrice) / Point;
+
    // Calculate the lot size
-   LotSize = RiskAmount / (StopLoss * PipValue / 10.0);
+   LotSize = RiskAmount / (StopLossPips * MarketInfo(Symbol(), MODE_TICKVALUE));
 
-   // Calculate the potential profit
-   PotentialProfit = LotSize * TakeProfit * PipValue / 10.0;
-
-   // Output the calculated lot size and potential profit
+   // Output the calculated lot size
    Print("Calculated Lot Size: ", LotSize);
-   Print("Potential Profit: ", PotentialProfit);
-
-   // Display the results on the chart
-   Comment("Risk Amount: $", RiskAmount, "\nStop Loss: ", StopLoss, " pips\nTake Profit: ", TakeProfit, " pips\nPip Value: $", PipValue, "\n\nCalculated Lot Size: ", LotSize, "\nPotential Profit: $", PotentialProfit);
+  }
+//+------------------------------------------------------------------+
+//| Function to create a label                                       |
+//+------------------------------------------------------------------+
+void CreateLabel(string name, string text, int x, int y, color labelColor)
+  {
+   if (!ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0))
+     {
+      Print("Failed to create label: ", name);
+      return;
+     }
+   ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
+   ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
+   ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
+   ObjectSetInteger(0, name, OBJPROP_COLOR, labelColor);
+   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 12);
+   ObjectSetString(0, name, OBJPROP_TEXT, text);
+  }
+//+------------------------------------------------------------------+
+//| Function to create an edit field                                 |
+//+------------------------------------------------------------------+
+void CreateEditField(string name, string text, int x, int y, color fieldColor)
+  {
+   if (!ObjectCreate(0, name, OBJ_EDIT, 0, 0, 0))
+     {
+      Print("Failed to create edit field: ", name);
+      return;
+     }
+   ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
+   ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
+   ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
+   ObjectSetInteger(0, name, OBJPROP_COLOR, fieldColor);
+   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 12);
+   ObjectSetString(0, name, OBJPROP_TEXT, text);
   }
 //+------------------------------------------------------------------+
