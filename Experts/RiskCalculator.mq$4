@@ -1,23 +1,26 @@
 //+------------------------------------------------------------------+
-//|                                                      RiskCalc.mq4|
+//|                                                      RiskCalculator.mq4 |
 //|                        Copyright 2023, MetaQuotes Software Corp. |
-//|                                       https://www.mql5.com       |
+//|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
 #property strict
 
+// Input parameters
+input double RiskAmount = 20.0; // Risk amount per trade
+input double AccountBalance = 100.0; // Account balance
+input double StopLossPrice = 0.0; // User-defined stop loss price
+
+// Global variables
 double LotSize;
-double PotentialProfit;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
   {
-   // Create labels and edit fields for user input
-   CreateLabel("RiskAmountLabel", "Risk Amount ($):", 10, 10, clrWhite);
-   CreateEditField("RiskAmountValue", "5", 150, 10, clrWhite);
-   CreateLabel("StopLossLabel", "Stop Loss Price:", 10, 40, clrRed);
-   CreateEditField("StopLossValue", DoubleToString(Ask - 0.0010, Digits), 150, 40, clrWhite);
+   // Output the risk amount and account balance
+   Print("Risk Amount: ", RiskAmount);
+   Print("Account Balance: ", AccountBalance);
 
    return(INIT_SUCCEEDED);
   }
@@ -26,39 +29,23 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
-   // Cleanup code if needed
-   Comment(""); // Clear the comment on deinitialization
-
-   // Delete labels and edit fields
-   ObjectDelete("RiskAmountLabel");
-   ObjectDelete("RiskAmountValue");
-   ObjectDelete("StopLossLabel");
-   ObjectDelete("StopLossValue");
+   // Cleanup code here
   }
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   // Get the current Ask and Bid prices
-   double currentAsk = Ask;
-   double currentBid = Bid;
+   // Get the current ask price
+   double currentAsk = MarketInfo(Symbol(), MODE_ASK);
 
-   // Read values from edit fields
-   double RiskAmount = StrToDouble(ObjectGetString(0, "RiskAmountValue", OBJPROP_TEXT));
-   double StopLossPrice = StrToDouble(ObjectGetString(0, "StopLossValue", OBJPROP_TEXT));
+   // Ensure the user has set a valid stop loss price
+   if (StopLossPrice <= 0)
+   {
+      Print("Please set a valid stop loss price.");
+      return;
+   }
 
-   // Recalculate risk based on updated values
-   CalculateRisk(RiskAmount, StopLossPrice, currentAsk);
-
-   // Update the display on each tick
-   Comment("Current Ask: ", currentAsk, "\nCurrent Bid: ", currentBid, "\nRisk Amount: $", RiskAmount, "\nStop Loss Price: ", StopLossPrice, "\n\nCalculated Lot Size: ", LotSize);
-  }
-//+------------------------------------------------------------------+
-//| Function to calculate risk                                       |
-//+------------------------------------------------------------------+
-void CalculateRisk(double RiskAmount, double StopLossPrice, double currentAsk)
-  {
    // Calculate the stop loss in pips
    double StopLossPips = MathAbs(currentAsk - StopLossPrice) / Point;
 
@@ -71,7 +58,7 @@ void CalculateRisk(double RiskAmount, double StopLossPrice, double currentAsk)
 //+------------------------------------------------------------------+
 //| Function to create a label                                       |
 //+------------------------------------------------------------------+
-void CreateLabel(string name, string text, int x, int y, color labelColor)
+void CreateLabel(string name, string text, int x, int y, color labelColor = clrGreen)
   {
    if (!ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0))
      {
@@ -88,7 +75,7 @@ void CreateLabel(string name, string text, int x, int y, color labelColor)
 //+------------------------------------------------------------------+
 //| Function to create an edit field                                 |
 //+------------------------------------------------------------------+
-void CreateEditField(string name, string text, int x, int y, color fieldColor)
+void CreateEditField(string name, int x, int y, int width, int height, string initialText)
   {
    if (!ObjectCreate(0, name, OBJ_EDIT, 0, 0, 0))
      {
@@ -97,143 +84,8 @@ void CreateEditField(string name, string text, int x, int y, color fieldColor)
      }
    ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
    ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
-   ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
-   ObjectSetInteger(0, name, OBJPROP_COLOR, fieldColor);
-   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 12);
-   ObjectSetString(0, name, OBJPROP_TEXT, text);
+   ObjectSetInteger(0, name, OBJPROP_XSIZE, width);
+   ObjectSetInteger(0, name, OBJPROP_YSIZE, height);
+   ObjectSetString(0, name, OBJPROP_TEXT, initialText);
   }
 //+------------------------------------------------------------------+
-```
-
-### Explanation:
-1. **Initialization (`OnInit`)**:
-   - Creates labels and edit fields for user input.
-   - The `RiskAmountValue` and `StopLossValue` fields are initialized with default values.
-
-2. **Deinitialization (`OnDeinit`)**:
-   - Clears the comment and deletes the labels and edit fields when the EA is removed from the chart.
-
-3. **Tick Function (`OnTick`)**:
-   - Gets the current Ask and Bid prices.
-   - Reads the risk amount and stop loss price from the edit fields.
-   - Calls `CalculateRisk` with the updated values.
-   - Updates the display on the chart with the current prices, risk amount, stop loss price, and calculated lot size.
-
-4. **CalculateRisk Function**:
-   - Takes `RiskAmount`, `StopLossPrice`, and `currentAsk` as parameters.
-   - Calculates the stop loss in pips based on the current Ask price.
-   - Calculates the lot size based on the risk amount and stop loss in pips.
-   - Outputs the calculated lot size.
-
-5. **CreateLabel Function**:
-   - Creates a label on the chart with a specified color.
-
-6. **CreateEditField Function**:
-   - Creates an edit field on the chart with a specified color.
-
-This way, users can input their desired risk amount and stop loss price directly on the chart using the edit fields, and the EA will calculate and display the appropriate lot size based on the current market prices.//+------------------------------------------------------------------+
-//|                                                      RiskCalc.mq4|
-//|                        Copyright 2023, MetaQuotes Software Corp. |
-//|                                       https://www.mql5.com       |
-//+------------------------------------------------------------------+
-#property strict
-
-double LotSize;
-double PotentialProfit;
-
-//+------------------------------------------------------------------+
-//| Expert initialization function                                   |
-//+------------------------------------------------------------------+
-int OnInit()
-  {
-   // Create labels and edit fields for user input
-   CreateLabel("RiskAmountLabel", "Risk Amount ($):", 10, 10, clrWhite);
-   CreateEditField("RiskAmountValue", "5", 150, 10, clrWhite);
-   CreateLabel("StopLossLabel", "Stop Loss Price:", 10, 40, clrRed);
-   CreateEditField("StopLossValue", DoubleToString(Ask - 0.0010, Digits), 150, 40, clrWhite);
-
-   return(INIT_SUCCEEDED);
-  }
-//+------------------------------------------------------------------+
-//| Expert deinitialization function                                 |
-//+------------------------------------------------------------------+
-void OnDeinit(const int reason)
-  {
-   // Cleanup code if needed
-   Comment(""); // Clear the comment on deinitialization
-
-   // Delete labels and edit fields
-   ObjectDelete("RiskAmountLabel");
-   ObjectDelete("RiskAmountValue");
-   ObjectDelete("StopLossLabel");
-   ObjectDelete("StopLossValue");
-  }
-//+------------------------------------------------------------------+
-//| Expert tick function                                             |
-//+------------------------------------------------------------------+
-void OnTick()
-  {
-   // Get the current Ask and Bid prices
-   double currentAsk = Ask;
-   double currentBid = Bid;
-
-   // Read values from edit fields
-   double RiskAmount = StrToDouble(ObjectGetString(0, "RiskAmountValue", OBJPROP_TEXT));
-   double StopLossPrice = StrToDouble(ObjectGetString(0, "StopLossValue", OBJPROP_TEXT));
-
-   // Recalculate risk based on updated values
-   CalculateRisk(RiskAmount, StopLossPrice, currentAsk);
-
-   // Update the display on each tick
-   Comment("Current Ask: ", currentAsk, "\nCurrent Bid: ", currentBid, "\nRisk Amount: $", RiskAmount, "\nStop Loss Price: ", StopLossPrice, "\n\nCalculated Lot Size: ", LotSize);
-  }
-//+------------------------------------------------------------------+
-//| Function to calculate risk                                       |
-//+------------------------------------------------------------------+
-void CalculateRisk(double RiskAmount, double StopLossPrice, double currentAsk)
-  {
-   // Calculate the stop loss in pips
-   double StopLossPips = MathAbs(currentAsk - StopLossPrice) / Point;
-
-   // Calculate the lot size
-   LotSize = RiskAmount / (StopLossPips * MarketInfo(Symbol(), MODE_TICKVALUE));
-
-   // Output the calculated lot size
-   Print("Calculated Lot Size: ", LotSize);
-  }
-//+------------------------------------------------------------------+
-//| Function to create a label                                       |
-//+------------------------------------------------------------------+
-void CreateLabel(string name, string text, int x, int y, color labelColor)
-  {
-   if (!ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0))
-     {
-      Print("Failed to create label: ", name);
-      return;
-     }
-   ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
-   ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
-   ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
-   ObjectSetInteger(0, name, OBJPROP_COLOR, labelColor);
-   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 12);
-   ObjectSetString(0, name, OBJPROP_TEXT, text);
-  }
-//+------------------------------------------------------------------+
-//| Function to create an edit field                                 |
-//+------------------------------------------------------------------+
-void CreateEditField(string name, string text, int x, int y, color fieldColor)
-  {
-   if (!ObjectCreate(0, name, OBJ_EDIT, 0, 0, 0))
-     {
-      Print("Failed to create edit field: ", name);
-      return;
-     }
-   ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
-   ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
-   ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
-   ObjectSetInteger(0, name, OBJPROP_COLOR, fieldColor);
-   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 12);
-   ObjectSetString(0, name, OBJPROP_TEXT, text);
-  }
-//+------------------------------------------------------------------```
-
