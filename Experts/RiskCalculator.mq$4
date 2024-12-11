@@ -9,6 +9,7 @@
 input double RiskAmount = 20.0; // Risk amount per trade
 input double AccountBalance = 100.0; // Account balance
 input double StopLossPrice = 0.0; // User-defined stop loss price
+input bool IsBuy = true; // True for buy position, false for sell position
 
 // Global variables
 double LotSize;
@@ -36,8 +37,8 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   // Get the current ask price
-   double currentAsk = MarketInfo(Symbol(), MODE_ASK);
+   // Get the current price based on the position type
+   double currentPrice = IsBuy ? MarketInfo(Symbol(), MODE_ASK) : MarketInfo(Symbol(), MODE_BID);
 
    // Ensure the user has set a valid stop loss price
    if (StopLossPrice <= 0)
@@ -47,7 +48,7 @@ void OnTick()
    }
 
    // Calculate the stop loss in pips
-   double StopLossPips = MathAbs(currentAsk - StopLossPrice) / Point;
+   double StopLossPips = MathAbs(currentPrice - StopLossPrice) / Point;
 
    // Calculate the lot size
    LotSize = RiskAmount / (StopLossPips * MarketInfo(Symbol(), MODE_TICKVALUE));
